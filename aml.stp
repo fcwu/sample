@@ -1,0 +1,231 @@
+/*
+ * Copyright (C) 2011 Canonical
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ */
+
+%{
+#include <acpi/acpi.h>
+%}
+
+function obj_name:string(name:long) %{
+    sprintf(THIS->__retvalue, "%4.4s", (char*)(unsigned long)THIS->name);
+%}
+
+probe kernel.function("acpi_evaluate_object@drivers/acpi/acpica/nsxfeval.c") {
+    if ($pathname != 0) 
+        name = kernel_string($pathname)
+    else if ($handle != 0)
+        name = obj_name(&@cast($handle, "struct acpi_namespace_node", "kernel")->name)
+    else name = "NULL"
+
+    printf("Evaluate %s():\n", name)
+}
+
+function decode_class:string(class: long) %{
+#define CLASS(val, str) case val:   strcpy(THIS->__retvalue, str); break;
+    switch (THIS->class) {
+    CLASS(0x00, "EXECUTE")
+    CLASS(0x01, "CREATE")
+    CLASS(0x02, "ARGUMENT")
+    CLASS(0x03, "NAMED_OBJECT")
+    CLASS(0x04, "CONTROL")
+    CLASS(0x05, "ASCII")
+    CLASS(0x06, "PREFIX")
+    CLASS(0x07, "INTERNAL")
+    CLASS(0x08, "RETURN_VALUE")
+    CLASS(0x09, "METHOD_CALL")
+    CLASS(0x0A, "UNKNOWN")
+    default:
+        strcpy(THIS->__retvalue, "UNKNOWN");
+        break;
+    }
+%}
+
+function decode_op:string(opcode: long) %{
+#define OP(val, str) case val:  strcpy(THIS->__retvalue, str); break;
+    switch (THIS->opcode) {
+    OP(  0x00, "ZERO_OP")
+    OP(  0x01, "ONE_OP")
+    OP(  0x02, "UNASSIGNED")
+    OP(  0x06, "ALIAS_OP")
+    OP(  0x08, "NAME_OP")
+    OP(  0x0a, "BYTE_OP")
+    OP(  0x0b, "WORD_OP")
+    OP(  0x0c, "DWORD_OP")
+    OP(  0x0d, "STRING_OP")
+    OP(  0x0e, "QWORD_OP")
+    OP(  0x10, "SCOPE_OP")
+    OP(  0x11, "BUFFER_OP")
+    OP(  0x12, "PACKAGE_OP")
+    OP(  0x13, "VAR_PACKAGE_OP")
+    OP(  0x14, "METHOD_OP")
+    OP(  0x2e, "DUAL_NAME_PREFIX")
+    OP(  0x2f, "MULTI_NAME_PREFIX_OP")
+    OP(  0x30, "NAME_CHAR_SUBSEQ")
+    OP(  0x41, "NAME_CHAR_FIRST")
+    OP(  0x5b, "EXTENDED_OP_PREFIX")
+    OP(  0x5c, "ROOT_PREFIX")
+    OP(  0x5e, "PARENT_PREFIX")
+    OP(  0x60, "LOCAL0")
+    OP(  0x61, "LOCAL1")
+    OP(  0x62, "LOCAL2")
+    OP(  0x63, "LOCAL3")
+    OP(  0x64, "LOCAL4")
+    OP(  0x65, "LOCAL5")
+    OP(  0x66, "LOCAL6")
+    OP(  0x67, "LOCAL7")
+    OP(  0x68, "ARG0")
+    OP(  0x69, "ARG1")
+    OP(  0x6a, "ARG2")
+    OP(  0x6b, "ARG3")
+    OP(  0x6c, "ARG4")
+    OP(  0x6d, "ARG5")
+    OP(  0x6e, "ARG6")
+    OP(  0x70, "STORE_OP")
+    OP(  0x71, "REF_OF_OP")
+    OP(  0x72, "ADD_OP")
+    OP(  0x73, "CONCAT_OP")
+    OP(  0x74, "SUBTRACT_OP")
+    OP(  0x75, "INCREMENT_OP")
+    OP(  0x76, "DECREMENT_OP")
+    OP(  0x77, "MULTIPLY_OP")
+    OP(  0x78, "DIVIDE_OP")
+    OP(  0x79, "SHIFT_LEFT_OP")
+    OP(  0x7a, "SHIFT_RIGHT_OP")
+    OP(  0x7b, "BIT_AND_OP")
+    OP(  0x7c, "BIT_NAND_OP")
+    OP(  0x7d, "BIT_OR_OP")
+    OP(  0x7e, "BIT_NOR_OP")
+    OP(  0x7f, "BIT_XOR_OP")
+    OP(  0x80, "BIT_NOT_OP")
+    OP(  0x81, "FIND_SET_LEFT_BIT_OP")
+    OP(  0x82, "FIND_SET_RIGHT_BIT_OP")
+    OP(  0x83, "DEREF_OF_OP")
+    OP(  0x84, "CONCAT_RES_OP")
+    OP(  0x85, "MOD_OP")
+    OP(  0x86, "NOTIFY_OP")
+    OP(  0x87, "SIZE_OF_OP")
+    OP(  0x88, "INDEX_OP")
+    OP(  0x89, "MATCH_OP")
+    OP(  0x8a, "CREATE_DWORD_FIELD_OP")
+    OP(  0x8b, "CREATE_WORD_FIELD_OP")
+    OP(  0x8c, "CREATE_BYTE_FIELD_OP")
+    OP(  0x8d, "CREATE_BIT_FIELD_OP")
+    OP(  0x8e, "TYPE_OP")
+    OP(  0x8f, "CREATE_QWORD_FIELD_OP")
+    OP(  0x90, "LAND_OP")
+    OP(  0x91, "LOR_OP")
+    OP(  0x92, "LNOT_OP")
+    OP(  0x93, "LEQUAL_OP")
+    OP(  0x94, "LGREATER_OP")
+    OP(  0x95, "LLESS_OP")
+    OP(  0x96, "TO_BUFFER_OP")
+    OP(  0x97, "TO_DECSTRING_OP")
+    OP(  0x98, "TO_HEXSTRING_OP")
+    OP(  0x99, "TO_INTEGER_OP")
+    OP(  0x9c, "TO_STRING_OP")
+    OP(  0x9d, "COPY_OP")
+    OP(  0x9e, "MID_OP")
+    OP(  0x9f, "CONTINUE_OP")
+    OP(  0xa0, "IF_OP")
+    OP(  0xa1, "ELSE_OP")
+    OP(  0xa2, "WHILE_OP")
+    OP(  0xa3, "NOOP_OP")
+    OP(  0xa4, "RETURN_OP")
+    OP(  0xa5, "BREAK_OP")
+    OP(  0xcc, "BREAK_POINT_OP")
+    OP(  0xff, "ONES_OP")
+    OP(0x5b00, "EXTENDED_OPCODE")
+    OP(0x5b01, "MUTEX_OP")
+    OP(0x5b02, "EVENT_OP")
+    OP(0x5b10, "SHIFT_RIGHT_BIT_OP")
+    OP(0x5b11, "SHIFT_LEFT_BIT_OP")
+    OP(0x5b12, "COND_REF_OF_OP")
+    OP(0x5b13, "CREATE_FIELD_OP")
+    OP(0x5b1f, "LOAD_TABLE_OP")
+    OP(0x5b20, "LOAD_OP")
+    OP(0x5b21, "STALL_OP")
+    OP(0x5b22, "SLEEP_OP")
+    OP(0x5b23, "ACQUIRE_OP")
+    OP(0x5b24, "SIGNAL_OP")
+    OP(0x5b25, "WAIT_OP")
+    OP(0x5b26, "RESET_OP")
+    OP(0x5b27, "RELEASE_OP")
+    OP(0x5b28, "FROM_BCD_OP")
+    OP(0x5b29, "TO_BCD_OP")
+    OP(0x5b2a, "UNLOAD_OP")
+    OP(0x5b30, "REVISION_OP")
+    OP(0x5b31, "DEBUG_OP")
+    OP(0x5b32, "FATAL_OP")
+    OP(0x5b33, "TIMER_OP")
+    OP(0x5b80, "REGION_OP")
+    OP(0x5b81, "FIELD_OP")
+    OP(0x5b82, "DEVICE_OP")
+    OP(0x5b83, "PROCESSOR_OP")
+    OP(0x5b84, "POWER_RES_OP")
+    OP(0x5b85, "THERMAL_ZONE_OP")
+    OP(0x5b86, "INDEX_FIELD_OP")
+    OP(0x5b87, "BANK_FIELD_OP")
+    OP(0x5b88, "DATA_REGION_OP")
+    OP(0x9295, "LGREATEREQUAL_OP")
+    OP(0x9294, "LLESSEQUAL_OP")
+    OP(0x9293, "LNOTEQUAL_OP")
+    /*
+     * Internal opcodes
+     */
+    OP(  0x2d, "INT_NAMEPATH_OP")
+    //OP(0x0030, "INT_NAMEDFIELD_OP")
+    OP(0x0031, "INT_RESERVEDFIELD_OP")
+    OP(0x0032, "INT_ACCESSFIELD_OP")
+    OP(0x0033, "INT_BYTELIST_OP")
+    OP(0x0034, "INT_STATICSTRING_OP")
+    OP(0x0035, "INT_METHODCALL_OP")
+    OP(0x0036, "INT_RETURN_VALUE_OP")
+    OP(0x0037, "INT_EVAL_SUBTREE_OP")
+    default:
+        strcpy(THIS->__retvalue, "UNKNOWN");
+        break;
+    }
+%}
+
+function get_node_name:string(name: long) %{
+    sprintf(THIS->__retvalue, "%4.4s", (char*)(unsigned long)THIS->name);
+%}
+
+probe kernel.function("acpi_ds_call_control_method@drivers/acpi/acpica/dsmethod.c") {
+    method_node = @cast($this_walk_state, "struct acpi_walk_state", "kernel")->method_call_node
+    if (method_node != 0)
+        printf("Call %s():\n", get_node_name(&@cast(method_node, "struct acpi_namespace_node", "kernel")->name))
+}
+
+probe kernel.function("acpi_ds_exec_end_op@drivers/acpi/acpica/dswexec.c") {
+    op_class = @cast($walk_state, "struct acpi_walk_state", "kernel")->op_info->class
+    printf("  Op: 0x%4.4x %-20.20s [0x%2.2x %s]\n", 
+        @cast($walk_state, "struct acpi_walk_state", "kernel")->opcode,
+        decode_op(@cast($walk_state, "struct acpi_walk_state", "kernel")->opcode),
+        op_class, decode_class(op_class))
+}
+
+probe begin {
+    printf("Starting ACPI debugger.\n");
+}
+
+probe end {
+    printf("Exiting ACPI debugger.\n");
+    exit()
+}
+
