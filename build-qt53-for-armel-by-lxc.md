@@ -48,7 +48,7 @@ make -j4
 On host, 
 
 ```
-sudo tar xvf qt53.tar
+sudo tar xvf qt53-all.tar
 sudo mv var/lib/lxc/p5 /var/lib/lxc/
 cat <<EOF | sudo tee /var/lib/lxc/p5/fstab
 /home/$USER/ mnt none bind 0 0        
@@ -65,14 +65,13 @@ On target,
 ```
 mkdir -p /home/linaro/qt53
 cp qt53-src/qtbase/lib /home/linaro/qt53/
-cp -a qt53-src/qtbase/plugins/platforms /home/linaro/
-cp appchooser /home/linaro/
-cat >/etc/ld.so.conf.d/qt.conf <<EOF
-# Multiarch support
+cp -a qt53-src/qtbase/plugins/platforms /home/linaro/qt53/
+cp appchooser /home/linaro/qt53/
+cat <<EOF | sudo tee /etc/ld.so.conf.d/qt.conf
 /home/linaro/qt53/lib
 EOF
-ldconfig
-/home/linaro/appchooser
+sudo ldconfig
+DISPLAY=:0 /home/linaro/appchooser
 ```
 
 ### NOTE
