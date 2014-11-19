@@ -48,7 +48,7 @@ make -j4
 On host, 
 
 ```
-tar xvf qt53.tar
+sudo tar xvf qt53.tar
 sudo mv var/lib/lxc/p5 /var/lib/lxc/
 cat <<EOF | sudo tee /var/lib/lxc/p5/fstab
 /home/$USER/ mnt none bind 0 0        
